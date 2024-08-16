@@ -547,6 +547,11 @@ export namespace Types {
      * @description Alows to raise errors if any matched files are not valid GraphQL. Default: false.
      */
     noSilentErrors?: boolean;
+
+    /**
+     * @description An array of files to generate.
+     */
+    generateFiles?: string[];
   }
 
   export type ComplexPluginOutput<M = Record<string, unknown>> = {

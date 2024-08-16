@@ -265,4 +265,41 @@ describe('CLI Flags', () => {
       expect(e.code).toEqual('MODULE_NOT_FOUND');
     }
   });
+
+  it('Should only generate files specified by cli flags', async () => {
+    mockConfig(`
+        schema: schema.graphql
+        generates:
+            file.ts:
+                - plugin
+            otherFile.ts:
+                - otherPlugin
+    `);
+    const args = createArgv('--generate-files otherFile.ts');
+    const context = await createContext(parseArgv(args));
+    const config = context.getConfig();
+    expect(config.schema).toEqual('schema.graphql');
+    expect(config.generates).toEqual({ 'otherFile.ts': ['otherPlugin'] });
+  });
+
+  it('Should take multiple generate files specified by cli flags', async () => {
+    mockConfig(`
+        schema: schema.graphql
+        generates:
+            ignoreFile.ts:
+                - ignorePlugin
+            file.ts:
+                - plugin
+            otherFile.ts:
+                - otherPlugin
+    `);
+    const args = createArgv('--generate-files file.ts --generate-files otherFile.ts');
+    const context = await createContext(parseArgv(args));
+    const config = context.getConfig();
+    expect(config.schema).toEqual('schema.graphql');
+    expect(config.generates).toEqual({
+      'file.ts': ['plugin'],
+      'otherFile.ts': ['otherPlugin'],
+    });
+  });
 });

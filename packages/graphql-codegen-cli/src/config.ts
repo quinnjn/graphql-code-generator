@@ -38,6 +38,7 @@ export type YamlCliFlags = {
   debug?: boolean;
   ignoreNoDocuments?: boolean;
   emitLegacyCommonJSImports?: boolean;
+  generateFiles: string[];
 };
 
 export function generateSearchPlaces(moduleName: string) {
@@ -255,6 +256,12 @@ export function buildOptions() {
       type: 'boolean' as const,
       default: false,
     },
+    g: {
+      alias: 'generateFiles',
+      describe: 'List of files to generate',
+      type: 'array' as const,
+      default: [],
+    },
   };
 }
 
@@ -334,6 +341,10 @@ export function updateContextWithCliFlags(context: CodegenContext, cliFlags: Yam
     context.enableCheckMode();
   }
 
+  if (cliFlags['generate-files'] && cliFlags['generate-files'].length > 0) {
+    context.generateFiles(cliFlags.generateFiles);
+  }
+
   context.updateConfig(config);
 }
 
@@ -344,6 +355,7 @@ export class CodegenContext {
   private _project?: string;
   private _checkMode = false;
   private _pluginContext: { [key: string]: any } = {};
+  private _generateFiles: string[];
 
   cwd: string;
   filepath: string;
@@ -367,6 +379,10 @@ export class CodegenContext {
     this.profiler = createNoopProfiler();
   }
 
+  generateFiles(files: string[]) {
+    this._generateFiles = files;
+  }
+
   useProject(name?: string) {
     this._project = name;
   }
@@ -384,6 +400,19 @@ export class CodegenContext {
         };
       } else {
         this.config = { ...this._config, pluginContext: this._pluginContext };
+      }
+
+      const generateFiles = this._generateFiles;
+
+      if (generateFiles) {
+        const generatesKeys = Object.keys(this.config.generates);
+        this.config.generates = generatesKeys.reduce((accumulator, doc) => {
+          if (generateFiles.includes(doc)) {
+            accumulator[doc] = this.config.generates[doc];
+          }
+
+          return accumulator;
+        }, {});
       }
     }
 
